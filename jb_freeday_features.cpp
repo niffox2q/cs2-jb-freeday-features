@@ -54,15 +54,18 @@ std::string sSoundLocal;
 //==========================================
 
 void PlaySlotSound(int iSlot, const char* path){
-    engine->ClientCommand(iSlot,"play %s",path);
+    auto pController = CCSPlayerController::FromSlot(iSlot);
+    if (!pController) return;
+    players_api->EmitSound(iSlot,pController->entindex(),path,1,3.0);
 }
 
 void PlaySoundAll(const char* path){
     for(int i = 0; i < MAX_PLAYERS;i++){
-        engine->ClientCommand(i,"play %s",path);
+        auto pController = CCSPlayerController::FromSlot(i);
+        if (!pController) continue;
+        players_api->EmitSound(i,pController->entindex(),path,1,3.0);
     }
 }
-
 
 void dbgmsg(const char* format, ...) {
     if (!b_debug) return;
