@@ -47,6 +47,7 @@ int iBlue;
 float flSpeed;
 std::string sSoundAll;
 std::string sSoundLocal;
+std::string sClantag;
 
 
 //==========================================
@@ -107,6 +108,8 @@ void LoadConfig() {
     flSpeed = config->GetFloat("Speed",1.0f);
     sSoundAll = config->GetString("SoundAll","");
     sSoundLocal = config->GetString("SoundLocal","");
+
+    sClantag = config->GetString("Clantag","[FD]");
 
     delete config;
 }
@@ -188,6 +191,20 @@ bool jb_freeday_features::Load(PluginId id, ISmmAPI* ismm, char* error, size_t m
     return true;
 }
 
+void UpdateScoreboardUI() {
+    if (!utils) return;
+    
+    IGameEventManager2* pEventMgr = utils->GetGameEventManager();
+    if (!pEventMgr) return;
+
+    IGameEvent* pEvent = pEventMgr->CreateEvent("nextlevel_changed", false);
+    if (pEvent) {
+        pEvent->SetString("nextlevel", "unknown");
+        pEvent->SetString("skirmishmode", "default");
+        
+        pEventMgr->FireEvent(pEvent, false);
+    }
+}
 
 
 void jb_freeday_features::AllPluginsLoaded() {
@@ -234,6 +251,10 @@ void jb_freeday_features::AllPluginsLoaded() {
 
         pPawn->m_flVelocityModifier = flSpeed;
 
+        pController->m_szClan() = CUtlSymbolLarge(sClantag.c_str());
+        utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
+        UpdateScoreboardUI();
+
         Color clr(iRed,iGreen,iBlue,255);
         pPawn->m_clrRender.Set(clr);
 
@@ -244,6 +265,14 @@ void jb_freeday_features::AllPluginsLoaded() {
 
         PlaySoundAll(sSoundAll.c_str());
         PlaySlotSound(iSlot,sSoundLocal.c_str());
+    });
+
+    jailbreak_api->OnRemoveFreedayPrisoner(g_PLID,[](int iSlot){
+        auto pController = CCSPlayerController::FromSlot(iSlot);
+        if (!pController) return;
+        pController->m_szClan() = CUtlSymbolLarge("\0");
+        utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
+        UpdateScoreboardUI();
     });
 
     utils->StartupServer(g_PLID, StartupServer);
@@ -268,4 +297,4 @@ const char* jb_freeday_features::GetLicense() { return "Private"; }
 const char* jb_freeday_features::GetLogTag() { return "[JB] Freeday Features"; }
 const char* jb_freeday_features::GetName() { return "[JB] Freeday Features"; }
 const char* jb_freeday_features::GetURL() { return "https://t.me/niffox_2q"; }
-const char* jb_freeday_features::GetVersion() { return "1.0.0"; }
+const char* jb_freeday_features::GetVersion() { return "1.0.1"; }
