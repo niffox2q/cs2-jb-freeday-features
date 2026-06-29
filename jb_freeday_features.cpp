@@ -323,4 +323,4 @@ const char* jb_freeday_features::GetLicense() { return "Private"; }
 const char* jb_freeday_features::GetLogTag() { return "[JB] Freeday Features"; }
 const char* jb_freeday_features::GetName() { return "[JB] Freeday Features"; }
 const char* jb_freeday_features::GetURL() { return "https://t.me/niffox_2q"; }
-const char* jb_freeday_features::GetVersion() { return "1.0.1"; }
+const char* jb_freeday_features::GetVersion() { return "1.0.2"; }
