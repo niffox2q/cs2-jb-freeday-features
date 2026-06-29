@@ -206,6 +206,22 @@ void UpdateScoreboardUI() {
     }
 }
 
+void ClearClangtag(CCSPlayerController* pc) {
+    pc->m_szClan() = "\0";
+    utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
+    UpdateScoreboardUI();
+}
+
+void ClearAllTags(){
+    for (int i = 0; i < MAX_PLAYERS;i++) {
+        auto pc = CCSPlayerController::FromSlot(i);
+        if (!pc) return;
+        pc->m_szClan() = "\0";
+        utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
+    }
+    UpdateScoreboardUI();
+}
+
 
 void jb_freeday_features::AllPluginsLoaded() {
     int ret;
@@ -273,6 +289,16 @@ void jb_freeday_features::AllPluginsLoaded() {
         pController->m_szClan() = CUtlSymbolLarge("\0");
         utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
         UpdateScoreboardUI();
+    });
+
+    utils->HookEvent(g_PLID,"player_death",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
+        int iSlot = pEvent->GetInt("userid");
+        auto pc = CCSPlayerController::FromSlot(iSlot);
+        if (!pc) return;
+        ClearClangtag(pc);
+    });
+    utils->HookEvent(g_PLID,"round_end",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
+        ClearAllTags();
     });
 
     utils->StartupServer(g_PLID, StartupServer);
