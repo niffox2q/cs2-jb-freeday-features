@@ -39,15 +39,12 @@ std::map<std::string, std::string> phrases;
 // =========================================
 bool b_debug = true;
 
-int iHealth;
-int iArmor;
 int iRed;
 int iGreen;
 int iBlue;
 float flSpeed;
 std::string sSoundAll;
 std::string sSoundLocal;
-std::string sClantag;
 
 
 //==========================================
@@ -98,9 +95,6 @@ void LoadConfig() {
         return;
     }
 
-    iHealth = config->GetInt("Health",100);
-    iArmor = config->GetInt("Armor",100);
-
     iRed = config->GetInt("Red",0);
     iGreen = config->GetInt("Green",0);
     iBlue = config->GetInt("Blue",255);
@@ -108,8 +102,6 @@ void LoadConfig() {
     flSpeed = config->GetFloat("Speed",1.0f);
     sSoundAll = config->GetString("SoundAll","");
     sSoundLocal = config->GetString("SoundLocal","");
-
-    sClantag = config->GetString("Clantag","[FD]");
 
     delete config;
 }
@@ -191,37 +183,6 @@ bool jb_freeday_features::Load(PluginId id, ISmmAPI* ismm, char* error, size_t m
     return true;
 }
 
-void UpdateScoreboardUI() {
-    if (!utils) return;
-    
-    IGameEventManager2* pEventMgr = utils->GetGameEventManager();
-    if (!pEventMgr) return;
-
-    IGameEvent* pEvent = pEventMgr->CreateEvent("nextlevel_changed", false);
-    if (pEvent) {
-        pEvent->SetString("nextlevel", "unknown");
-        pEvent->SetString("skirmishmode", "default");
-        
-        pEventMgr->FireEvent(pEvent, false);
-    }
-}
-
-void ClearClangtag(CCSPlayerController* pc) {
-    pc->m_szClan() = "\0";
-    utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
-    UpdateScoreboardUI();
-}
-
-void ClearAllTags(){
-    for (int i = 0; i < MAX_PLAYERS;i++) {
-        auto pc = CCSPlayerController::FromSlot(i);
-        if (!pc || !pc->IsConnected()) continue;
-        pc->m_szClan() = "\0";
-        utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
-    }
-    UpdateScoreboardUI();
-}
-
 
 void jb_freeday_features::AllPluginsLoaded() {
     int ret;
@@ -262,20 +223,12 @@ void jb_freeday_features::AllPluginsLoaded() {
         auto pPawn = pController->GetPlayerPawn();
         if (!pPawn || !pPawn->IsAlive()) return;
 
-        pPawn->m_iHealth = iHealth;
-        pPawn->m_iMaxHealth = iHealth;
-
         pPawn->m_flVelocityModifier = flSpeed;
-
-        pController->m_szClan() = CUtlSymbolLarge(sClantag.c_str());
-        utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
-        UpdateScoreboardUI();
 
         Color clr(iRed,iGreen,iBlue,255);
         pPawn->m_clrRender.Set(clr);
 
-        utils->SetStateChanged(pPawn,"CBaseEntity","m_iHealth");
-        utils->SetStateChanged(pPawn,"CBaseEntity","m_iMaxHealth");
+
         utils->SetStateChanged(pPawn,"CCSPlayerPawn","m_flVelocityModifier");
         utils->SetStateChanged(pPawn,"CBaseModelEntity","m_clrRender");
 
@@ -285,24 +238,6 @@ void jb_freeday_features::AllPluginsLoaded() {
         if (!sSoundLocal.empty()) {
             PlaySlotSound(iSlot, sSoundLocal.c_str());
         }
-    });
-
-    jailbreak_api->OnRemoveFreedayPrisoner(g_PLID,[](int iSlot){
-        auto pController = CCSPlayerController::FromSlot(iSlot);
-        if (!pController || !pController->IsConnected()) return;
-        pController->m_szClan() = CUtlSymbolLarge("\0");
-        utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
-        UpdateScoreboardUI();
-    });
-
-    utils->HookEvent(g_PLID,"player_death",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
-        int iSlot = pEvent->GetInt("userid");
-        auto pc = CCSPlayerController::FromSlot(iSlot);
-        if (!pc || !pc->IsConnected()) return;
-        ClearClangtag(pc);
-    });
-    utils->HookEvent(g_PLID,"round_end",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
-        ClearAllTags();
     });
 
     utils->StartupServer(g_PLID, StartupServer);
@@ -327,4 +262,4 @@ const char* jb_freeday_features::GetLicense() { return "Private"; }
 const char* jb_freeday_features::GetLogTag() { return "[JB] Freeday Features"; }
 const char* jb_freeday_features::GetName() { return "[JB] Freeday Features"; }
 const char* jb_freeday_features::GetURL() { return "https://t.me/niffox_2q"; }
-const char* jb_freeday_features::GetVersion() { return "1.0.2"; }
+const char* jb_freeday_features::GetVersion() { return "1.0.4"; }
