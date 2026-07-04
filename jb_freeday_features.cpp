@@ -207,7 +207,7 @@ void UpdateScoreboardUI() {
 }
 
 void ClearClangtag(CCSPlayerController* pc) {
-    pc->m_szClan() = CUtlSymbolLarge("\0");
+    pc->m_szClan() = "\0";
     utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
     UpdateScoreboardUI();
 }
@@ -215,8 +215,8 @@ void ClearClangtag(CCSPlayerController* pc) {
 void ClearAllTags(){
     for (int i = 0; i < MAX_PLAYERS;i++) {
         auto pc = CCSPlayerController::FromSlot(i);
-        if (!pc) continue;
-        pc->m_szClan() = CUtlSymbolLarge("\0");
+        if (!pc || !pc->IsConnected()) continue;
+        pc->m_szClan() = "\0";
         utils->SetStateChanged(pc, "CCSPlayerController", "m_szClan");
     }
     UpdateScoreboardUI();
@@ -279,13 +279,17 @@ void jb_freeday_features::AllPluginsLoaded() {
         utils->SetStateChanged(pPawn,"CCSPlayerPawn","m_flVelocityModifier");
         utils->SetStateChanged(pPawn,"CBaseModelEntity","m_clrRender");
 
-        PlaySoundAll(sSoundAll.c_str());
-        PlaySlotSound(iSlot,sSoundLocal.c_str());
+        if (!sSoundAll.empty()) {
+            PlaySoundAll(sSoundAll.c_str());
+        }
+        if (!sSoundLocal.empty()) {
+            PlaySlotSound(iSlot, sSoundLocal.c_str());
+        }
     });
 
     jailbreak_api->OnRemoveFreedayPrisoner(g_PLID,[](int iSlot){
         auto pController = CCSPlayerController::FromSlot(iSlot);
-        if (!pController) return;
+        if (!pController || !pController->IsConnected()) return;
         pController->m_szClan() = CUtlSymbolLarge("\0");
         utils->SetStateChanged(pController, "CCSPlayerController", "m_szClan");
         UpdateScoreboardUI();
@@ -294,7 +298,7 @@ void jb_freeday_features::AllPluginsLoaded() {
     utils->HookEvent(g_PLID,"player_death",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
         int iSlot = pEvent->GetInt("userid");
         auto pc = CCSPlayerController::FromSlot(iSlot);
-        if (!pc) return;
+        if (!pc || !pc->IsConnected()) return;
         ClearClangtag(pc);
     });
     utils->HookEvent(g_PLID,"round_end",[](const char* szName, IGameEvent* pEvent, bool bDontBroadcast){
